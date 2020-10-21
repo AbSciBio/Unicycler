@@ -361,7 +361,49 @@ def spades_assembly(read_files, out_dir, kmers, threads, spades_path, spades_tmp
     using_unpaired_reads = unpaired is not None and os.path.isfile(unpaired)
 
     kmer_string = ','.join([str(x) for x in kmers])
-    command = [spades_path, '-o', out_dir, '-k', kmer_string, '--threads', str(threads)]
+
+    # get the location of the analysis folder
+    head, tail = os.path.split(out_dir)
+    for i in range(0, 4):
+        head, tail = os.path.split(head)
+    path_to_analysis_folder = head
+    readcount_path = os.path.join(path_to_analysis_folder, "readcount_data.txt")
+
+    read_count = 0  # if read count is not found, use coverage cutoff 3
+    fh = open(readcount_path, "r")
+    # look through readcount file to find readcount for the sample
+    for line in fh:
+        sample_name = line.split(",")[0]
+        sample_id = sample_name.split("_")[0]  # get sample ID
+        if sample_id == tail.split("_")[0]:
+            read_count = int(line.split(",")[1])
+
+    print("read count = " + str(read_count))
+
+    # Read count thresholds and coverage cutoff values were selected after
+    # thorough testing on samples with varying coverage.
+    if read_count < 100000:
+        coverage_cutoff = 5
+    elif read_count < 150000:
+        coverage_cutoff = 10
+    elif read_count < 200000:
+        coverage_cutoff = 20
+    else:
+        coverage_cutoff = 40
+
+    print("coverage cutoff = " + str(coverage_cutoff))
+
+    command = [
+        spades_path,
+        '-o',
+        out_dir,
+        '-k',
+        kmer_string,
+        '--threads',
+        str(threads),
+        '--cov-cutoff',
+        str(coverage_cutoff)
+    ]
     if just_last:
         command += ['--restart-from', 'k' + str(kmers[-1])]
     else:
