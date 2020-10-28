@@ -363,22 +363,24 @@ def spades_assembly(read_files, out_dir, kmers, threads, spades_path, spades_tmp
     readcount_path = os.path.join(path_to_analysis_folder, "readcount_data.txt")
 
     read_count = 0  # if read count is not found, use coverage cutoff 3
-    fh = open(readcount_path, "r")
-    # look through readcount file to find readcount for the sample
-    for line in fh:
-        sample_name = line.split(",")[0]
-        sample_id = sample_name.split("_")[0]  # get sample ID
-        if sample_id == tail.split("_")[0]:
-            read_count = int(line.split(",")[1])
+
+    if not os.path.exists(readcount_path):
+        print("read count file not found")
+    else:
+        fh = open(readcount_path, "r")
+        # look through readcount file to find readcount for the sample
+        for line in fh:
+            sample_name = line.split(",")[0]
+            sample_id = sample_name.split("_")[0]  # get sample ID
+            if sample_id == tail.split("_")[0]:
+                read_count = int(line.split(",")[1])
 
     print("read count = " + str(read_count))
 
     # Read count thresholds and coverage cutoff values were selected after
     # thorough testing on samples with varying coverage.
-    if read_count < 100000:
+    if read_count < 150000:
         coverage_cutoff = 5
-    elif read_count < 150000:
-        coverage_cutoff = 10
     elif read_count < 200000:
         coverage_cutoff = 20
     else:
